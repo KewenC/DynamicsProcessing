@@ -18,9 +18,10 @@ import static android.os.Build.ID;
 
 public class MainActivity extends AppCompatActivity {
     private static final String[] NEW_HZ_NAME = {"31HZ", "62HZ","125HZ", "250HZ",  "500HZ", "1KHZ", "2KHZ", "4KHZ", "8KHZ", "16KHZ"};
+//    private static final String[] NEW_HZ_NAME = {"100HZ", "200HZ","400HZ", "600HZ",  "1KHZ", "3KHZ", "6KHZ", "12KHZ", "14KHZ", "16KHZ"};
     private MediaPlayer mMediaPlayer;
     private int sessionId;
-    private static final int EQ_MAX_VALUE = 60;
+    private static final int EQ_MAX_VALUE = 10;
     private static final int HALF_EQ_MAX_VALUE = EQ_MAX_VALUE/2;
     private AppCompatSeekBar seekBars[];
     private TextView textViews[];
@@ -34,10 +35,15 @@ public class MainActivity extends AppCompatActivity {
     private static final int mVariant = 0;
     private static final int mChannelCount = 1;
     private static final int[] bandVal = {31, 62, 125, 250,  500, 1000, 2000, 4000, 8000, 16000};
+//    private static final int[] bandVal = {220, 2220, 4220, 6220,  8220, 10220, 12220, 14220, 16220, 20000};
+//    private static final int[] bandVal = {100, 200, 400, 600,  1000, 3000, 6000, 12000, 14000, 16000};
     private static final int maxBandCount = bandVal.length;
+//    private static final int maxBandCount = 6;
     private int[] currentEqualizerValues;
     private TextView tvInputGain;
     private AppCompatSeekBar sbInputGain;
+    private DynamicsProcessing.Mbc mbc;
+    private DynamicsProcessing.Limiter limiter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,21 +97,43 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //Limiter常量
+    private static final boolean LIMITER_DEFAULT_ENABLED = true;
+    private static final int LIMITER_DEFAULT_LINK_GROUP = 0;//;
+    private static final float LIMITER_DEFAULT_ATTACK_TIME = 1; // ms
+    private static final float LIMITER_DEFAULT_RELEASE_TIME = 60; // ms
+    private static final float LIMITER_DEFAULT_RATIO = 10; // N:1
+    private static final float LIMITER_DEFAULT_THRESHOLD = -2; // dB
+    private static final float LIMITER_DEFAULT_POST_GAIN = 0; // dB
+
     private void initDynamicsProcessing() {
         if (Build.VERSION.SDK_INT >= 28) {
             if (dp == null){
                 DynamicsProcessing.Config.Builder builder = new DynamicsProcessing.Config.Builder(mVariant, mChannelCount, true, maxBandCount, true, maxBandCount, true, maxBandCount, true);
                 dp = new DynamicsProcessing(PRIORITY, sessionId, builder.build());
                 dp.setEnabled(totalEnable);
+
                 eq = new DynamicsProcessing.Eq(true, true, maxBandCount);
                 eq.setEnabled(totalEnable);
+
+                mbc = new DynamicsProcessing.Mbc(true,true, maxBandCount);
+                mbc.setEnabled(totalEnable);
+
+                limiter = new DynamicsProcessing.Limiter(true,LIMITER_DEFAULT_ENABLED, LIMITER_DEFAULT_LINK_GROUP, LIMITER_DEFAULT_ATTACK_TIME, LIMITER_DEFAULT_RELEASE_TIME, LIMITER_DEFAULT_RATIO, LIMITER_DEFAULT_THRESHOLD, LIMITER_DEFAULT_POST_GAIN);
+                limiter.setEnabled(totalEnable);
             }
             try {
                 for (int i=0;i<maxBandCount;i++){
                     eq.getBand(i).setCutoffFrequency(bandVal[i]);
                     setBandGain(i,currentEqualizerValues[i]);
-                    dp.setPreEqAllChannelsTo(eq);
+
+                    mbc.getBand(i).setCutoffFrequency(bandVal[i]);
+
                 }
+                dp.setPreEqAllChannelsTo(eq);
+                dp.setMbcAllChannelsTo(mbc);
+                dp.setPostEqAllChannelsTo(eq);
+                dp.setLimiterAllChannelsTo(limiter);
             } catch (Exception e){
                 e.printStackTrace();
             }
@@ -176,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
                     eq.getBand(band).setEnabled(true);
                     eq.getBand(band).setGain(currentEqualizerValues[band]);
                     dp.setPreEqBandAllChannelsTo(band,eq.getBand(band));
+                    dp.setPostEqBandAllChannelsTo(band,eq.getBand(band));
                     return true;
                 } catch (UnsupportedOperationException e){
                     Log.e("TAGF","setBandGain_Exception2!");
