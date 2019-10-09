@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String[] NEW_HZ_NAME = {"31HZ", "62HZ","125HZ", "250HZ",  "500HZ", "1KHZ", "2KHZ", "4KHZ", "8KHZ", "16KHZ"};
 //    private static final String[] NEW_HZ_NAME = {"100HZ", "200HZ","400HZ", "600HZ",  "1KHZ", "3KHZ", "6KHZ", "12KHZ", "14KHZ", "16KHZ"};
     private MediaPlayer mMediaPlayer;
-    private int sessionId;
+    private int sessionId = 0;
     private static final int EQ_MAX_VALUE = 10;
     private static final int HALF_EQ_MAX_VALUE = EQ_MAX_VALUE/2;
     private AppCompatSeekBar seekBars[];
