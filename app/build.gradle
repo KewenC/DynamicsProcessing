@@ -12,16 +12,16 @@ android {
         minSdkVersion 17
         targetSdkVersion 28
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
         release {
-            storeFile file("Z:\\products_key\\KuXunAppTeam.keystore")
-            storePassword "kuxun328"
-            keyAlias "bassbooster_circleversion2"
-            keyPassword "kuxun328"
+            storeFile file("H:\\TestKeyStore\\Test.jks")
+            storePassword "123456"
+            keyAlias "Test"
+            keyPassword "123456"
             v1SigningEnabled true
             v2SigningEnabled true
         }
