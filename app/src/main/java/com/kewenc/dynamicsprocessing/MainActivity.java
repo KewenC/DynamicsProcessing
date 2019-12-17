@@ -2,6 +2,7 @@ package com.kewenc.dynamicsprocessing;
 
 import android.media.MediaPlayer;
 import android.media.audiofx.DynamicsProcessing;
+import android.media.audiofx.Equalizer;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,6 +14,7 @@ import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import static android.os.Build.ID;
 
@@ -44,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private AppCompatSeekBar sbInputGain;
     private DynamicsProcessing.Mbc mbc;
     private DynamicsProcessing.Limiter limiter;
+    private Equalizer equalizer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +57,12 @@ public class MainActivity extends AppCompatActivity {
         mMediaPlayer.start();
 
         addTenEqCount();
-        initDynamicsProcessing();
+
+        equalizer = new Equalizer(PRIORITY,0);
+        equalizer.setEnabled(false);
+
+//        initDynamicsProcessing();
+        setEffectEnable(totalEnable);
 
         eqEnableCheckBox = findViewById(R.id.eqEnableCheckBox);
         eqEnableCheckBox.setChecked(totalEnable);
@@ -90,11 +98,19 @@ public class MainActivity extends AppCompatActivity {
 
     private void setEqEnable(boolean b){
         totalEnable = b;
-        if (Build.VERSION.SDK_INT >= 28) {
-            if (dp != null){
-                dp.setEnabled(totalEnable);
-            }
-        }
+        Log.d("TAGF","totalEnable="+totalEnable);
+//        if (Build.VERSION.SDK_INT >= 28) {
+//            if (dp != null){
+//                dp.setEnabled(totalEnable);
+//            }
+//        }
+        setEffectEnable(totalEnable);
+//        if (dp != null) {
+//            dp.setEnabled(totalEnable);
+//            dp.release();
+//            dp = null;
+//        }
+//        initDynamicsProcessing();
     }
 
     //Limiter常量
@@ -105,6 +121,45 @@ public class MainActivity extends AppCompatActivity {
     private static final float LIMITER_DEFAULT_RATIO = 10; // N:1
     private static final float LIMITER_DEFAULT_THRESHOLD = -2; // dB
     private static final float LIMITER_DEFAULT_POST_GAIN = 0; // dB
+
+    private void setEffectEnable(boolean isEnable) {
+        if (Build.VERSION.SDK_INT >= 28) {
+            if (dp != null) {
+                dp.setEnabled(isEnable);//isEnable
+                dp.release();
+                dp = null;
+            }
+            if (isEnable) {
+                DynamicsProcessing.Config.Builder builder = new DynamicsProcessing.Config.Builder(mVariant, mChannelCount, true, maxBandCount, true, maxBandCount, true, maxBandCount, true);
+                dp = new DynamicsProcessing(PRIORITY, sessionId, builder.build());
+                dp.setEnabled(true);//true
+
+                setEffectEnableBase(true);//true
+            }
+        }
+    }
+
+    private void setEffectEnableBase(boolean isEnable) {
+        if (Build.VERSION.SDK_INT >= 28) {
+            if (dp != null) {
+                dp.setEnabled(isEnable);//isEnable
+                dp.release();
+                dp = null;
+            }
+            if (isEnable) {
+                DynamicsProcessing.Config.Builder builder = new DynamicsProcessing.Config.Builder(mVariant, mChannelCount, true, maxBandCount, true, maxBandCount, true, maxBandCount, true);
+                dp = new DynamicsProcessing(PRIORITY, sessionId, builder.build());
+                dp.setEnabled(true);//true
+
+                if (dp != null) {
+                    dp.setEnabled(false);//false
+                    dp.release();
+                    dp = null;
+                }
+                initDynamicsProcessing();
+            }
+        }
+    }
 
     private void initDynamicsProcessing() {
         if (Build.VERSION.SDK_INT >= 28) {
@@ -135,6 +190,8 @@ public class MainActivity extends AppCompatActivity {
                 dp.setPostEqAllChannelsTo(eq);
                 dp.setLimiterAllChannelsTo(limiter);
             } catch (Exception e){
+                Toast.makeText(this,"initDynamicsProcessing Exception",Toast.LENGTH_SHORT).show();
+                Log.e("TAGF","initDynamicsProcessing Exception");
                 e.printStackTrace();
             }
         }
@@ -192,6 +249,11 @@ public class MainActivity extends AppCompatActivity {
             dp.setEnabled(false);
             dp.release();
             dp = null;
+        }
+        if (equalizer != null) {
+            equalizer.setEnabled(false);
+            equalizer.release();
+            equalizer = null;
         }
     }
 
